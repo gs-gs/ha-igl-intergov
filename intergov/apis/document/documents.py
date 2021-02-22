@@ -5,7 +5,7 @@ from flask import (
     Blueprint, Response, request,
 )
 
-from intergov.apis.common.demoauth import demo_auth
+from intergov.apis.common import auth
 from intergov.apis.common.errors import (
     InternalServerError
 )
@@ -103,9 +103,9 @@ def document_post(jurisdiction_name):
 
 
 @blueprint.route('/<uri>', methods=['GET'])
-@demo_auth()
+@auth.jwt
 @statsd_timer("api.document.endpoint.document_fetch")
-def document_fetch(uri):
+def document_fetch(uri, jwt=None):
     """
     ---
     get:
@@ -125,6 +125,11 @@ def document_fetch(uri):
                 type: string
           description: Returns document
     """
+    try:
+        jurisdiction = Jurisdiction(jwt.get('jurisdiction'))
+    except Exception as e:
+        raise BadJurisdictionNameError(e)
+
     if not URI(uri).is_valid_multihash():
         raise InvalidURIError()
 
@@ -136,23 +141,8 @@ def document_fetch(uri):
         object_lake_repo=object_lake_repo,
     )
 
-    request_auth = getattr(request, "auth", None)
-    if request_auth and 'jurisdiction' in request_auth:
-        try:
-            auth_jurisdiction = Jurisdiction(request_auth['jurisdiction'])
-        except Exception as e:
-            raise BadJurisdictionNameError(e)
-    else:
-        # no auth is provided, trust the GET request
-        # assuming JWT will handle it
-        # TODO: ensure that the auth provided allows access from that country
-        try:
-            auth_jurisdiction = Jurisdiction(request.args["as_jurisdiction"])
-        except Exception as e:
-            raise BadJurisdictionNameError(e)
-
     try:
-        document_body = use_case.execute(uri, auth_jurisdiction)
+        document_body = use_case.execute(uri, jurisdiction)
     except Exception as e:
         logger.exception(e)
         raise InternalServerError(e)
@@ -165,4 +155,4 @@ def document_fetch(uri):
             # TODO: some information about the file content?
         )
     else:
-        raise DocumentNotFoundError(uri, auth_jurisdiction)
+        raise DocumentNotFoundError(uri, jurisdiction)

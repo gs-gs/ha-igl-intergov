@@ -3,7 +3,7 @@ import io
 from http import HTTPStatus
 from unittest import mock
 from intergov.domain.jurisdiction import Jurisdiction
-from tests.unit.apis.common.auth.test import VALID_AUTH_NO_ROLE_JSON, _create_auth_headers
+from tests.unit.apis.common.auth.test import _create_auth_headers
 
 from tests.unit.domain.wire_protocols.test_generic_message import (
     _random_multihash
@@ -32,8 +32,8 @@ from intergov.apis.document.exceptions import (
 VALID_JURISDICTION_NAME = 'US'
 INVALID_JURISDICTION_NAME = 'USUS'
 
-VALID_JURISDICTION_AUTH_JSON = {**VALID_AUTH_NO_ROLE_JSON, 'jurisdiction': VALID_JURISDICTION_NAME}
-INVALID_JURISDICTION_AUTH_JSON = {**VALID_AUTH_NO_ROLE_JSON, 'jurisdiction': INVALID_JURISDICTION_NAME}
+VALID_JURISDICTION_AUTH_JSON = {'jurisdiction': VALID_JURISDICTION_NAME}
+INVALID_JURISDICTION_AUTH_JSON = {'jurisdiction': INVALID_JURISDICTION_NAME}
 
 VALID_AUTH_HEADERS = _create_auth_headers(VALID_JURISDICTION_AUTH_JSON)
 INVALID_AUTH_HEADERS = _create_auth_headers(INVALID_JURISDICTION_AUTH_JSON)
